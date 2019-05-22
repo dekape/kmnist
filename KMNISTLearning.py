@@ -577,7 +577,7 @@ def evaluate_test(X_test, model, norm_mean, norm_std, test_batch_size=30, test_t
       model.eval()
       model.to(device)
       y_test = torch.zeros_like(X_test)
-      test_dataset = CustomTensorDataset(normalise_image(X_test/255., norm_mean, norm_std), y_test, transform=test_transform)
+      test_dataset = CustomTensorDataset(normalise_image(X_test.float(), norm_mean, norm_std), y_test, transform=test_transform)
       test_data_loader = DataLoader(test_dataset, test_batch_size, shuffle=False)
       
       y_preds = []
