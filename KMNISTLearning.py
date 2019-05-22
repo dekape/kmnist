@@ -463,10 +463,10 @@ class KFoldValidation(SupervisedLearning):
         print(" ")
         print("Result:")
         print("----------------------------")
-        print("Average validation loss for ", n ," folds is ", ave_result[0])
-        print("Average validation accuracy for ", n ," folds is ", ave_result[1])
-        print("Average train loss for ", n ," folds is ", ave_result[2])
-        print("Average train accuracy for ", n ," folds is ", ave_result[3])
+        print("Average validation loss for ", self.n_folds ," folds is ", ave_result[0])
+        print("Average validation accuracy for ", self.n_folds ," folds is ", ave_result[1])
+        print("Average train loss for ", self.n_folds ," folds is ", ave_result[2])
+        print("Average train accuracy for ", self.n_folds ," folds is ", ave_result[3])
         return result
       
     def _train_validation(self, train_set, validation_set, plot=True):
