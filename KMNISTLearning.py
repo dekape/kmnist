@@ -224,7 +224,7 @@ class SupervisedLearning:
               logs['val_' + 'accuracy'] = 1.
               liveloss.update(logs)
               liveloss.draw()
-              logs['epoch'] = time.time() - t
+              logs['time'] = time.time() - t
               
             # Checking stopping criteria
             if self.early_stop: self.early(train_accuracy)
@@ -294,7 +294,7 @@ class SupervisedLearning:
               logs['val_' + 'accuracy'] = val_accuracy.item() # liveloss wants it plotted
               liveloss.update(logs)
               liveloss.draw()
-              logs['epoch'] = time.time() - t 
+              logs['time'] = time.time() - t 
             
             # Checking stopping criteria
             if self.early_stop: self.early(val_accuracy)
@@ -492,7 +492,7 @@ class KFoldValidation(SupervisedLearning):
             if plot:
                 liveloss.update(logs)
                 liveloss.draw()
-            logs['epoch'] = time.time() - t
+            logs['time'] = time.time() - t
             
             # Checking stopping criteria
             if self.early_stop: self.early(validation_accuracy)
