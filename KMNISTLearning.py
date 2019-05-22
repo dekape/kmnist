@@ -224,6 +224,7 @@ class SupervisedLearning:
               logs['val_' + 'accuracy'] = 1.
               liveloss.update(logs)
               liveloss.draw()
+              logs['epoch'] = time.time() - t
               
             # Checking stopping criteria
             if self.early_stop: self.early(train_accuracy)
@@ -236,11 +237,13 @@ class SupervisedLearning:
             
             # If the stopping criteria is met  
             if self.early.stop: 
+                self.logs = logs
                 self.model = self.best_model
                 break
-                
+            self.logs = logs  
+                  
         self.trained_full=True
-        self.logs = liveloss
+        
 
       else:
         # split data
@@ -290,7 +293,8 @@ class SupervisedLearning:
               logs['val_' + 'log loss'] = val_loss.item()
               logs['val_' + 'accuracy'] = val_accuracy.item() # liveloss wants it plotted
               liveloss.update(logs)
-              liveloss.draw() 
+              liveloss.draw()
+              logs['epoch'] = time.time() - t 
             
             # Checking stopping criteria
             if self.early_stop: self.early(val_accuracy)
@@ -302,14 +306,15 @@ class SupervisedLearning:
             
             # If the stopping criteria is met  
             if self.early.stop: 
+                self.logs = logs
                 self.model = self.best_model
                 break
 
-        self.logs = logs
+            self.logs = logs
         self.trained_full=False
         self.model = self.best_model
               
-      return time.time() - t
+      return None
             
             
 
@@ -466,6 +471,8 @@ class KFoldValidation(SupervisedLearning):
       
     def _train_validation(self, train_set, validation_set, plot=True):
         """The train function which takes the weight-decay as the argument """
+        t = time.time()
+
         train_loader = DataLoader(train_set, batch_size= self.batch_size, shuffle=True, num_workers=4)
         validation_loader = DataLoader(validation_set, batch_size= self.test_batch_size, shuffle=False, num_workers=4)
         #test_loader = DataLoader(cifar_test, batch_size=test_batch_size, shuffle=False, num_workers=4)
@@ -485,6 +492,7 @@ class KFoldValidation(SupervisedLearning):
             if plot:
                 liveloss.update(logs)
                 liveloss.draw()
+            logs['epoch'] = time.time() - t
             
             # Checking stopping criteria
             if self.early_stop: self.early(validation_accuracy)
@@ -498,8 +506,10 @@ class KFoldValidation(SupervisedLearning):
             if self.early_stop:
                 if self.early.stop: 
                     #self.model = self.best_model
+                    self.logs = logs
                     print("The best model is found.")
                     break
+            self.logs = logs
         self.result = [validation_loss.item(), validation_accuracy.item(), train_loss.item(), train_accuracy.item()]
         return self.result
 
@@ -597,15 +607,18 @@ def model_save(model, name, path, val_acc):
   return
 
 
+
 def model_load(path, model_name):
   """Loading function for models from google drive"""
   model = torch.load(path + model_name + '.pth')
   return model
 
 
+
 def param_strip(param):
   """Strips the key text info out of certain parameters"""
   return str(param)[:str(param).find('(')]
+
 
 
 def full_save(path, name, model, optimiser, loss_function, early_stop_tol, n_epoch, lr, momentum, weight_decay, n_folds, train_trans, val_acc, val_loss, train_time, test_acc=None):
@@ -618,3 +631,36 @@ def full_save(path, name, model, optimiser, loss_function, early_stop_tol, n_epo
   model_save(model, name, path, val_acc)
   np.savetxt(path + name + '_' + str(val_acc)[2:5] + ".csv", np.r_[ind, row], fmt='%s', delimiter=',')
   return
+
+
+
+class ensemble_net(nn.Module):
+    """A classifier class that takes individiual pretrained models 
+    and aggregates their output values to create ensemble voting
+      Params
+    ------
+      models: a list of model objects
+    Returns
+    -------
+      x_out: a probability vector for the output classes
+    """
+    def __init__(self, models):
+        super(ensemble_net, self).__init__()
+        self.models = models
+        self.soft = nn.Softmax(dim=1)
+    def forward(self, x):
+        num = len(self.models)
+        for ind, model in enumerate(self.models):
+          if ind ==0:
+            x1 = model(x)
+            x_out = self.soft(x1)
+          else:
+            x1 = model(x)
+            x_out += self.soft(x1)
+        x_out /= num
+        return x_out
+    def inspect(self):
+      """Returns the composition of the ensemble model"""
+      for model in self.models:
+        print(model)
+      return None
