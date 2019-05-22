@@ -586,11 +586,11 @@ def evaluate_test(X_test, model, norm_mean, norm_std, test_batch_size=30, test_t
         sub.to_csv(path)
         
       return y_preds, sub
-      
+
 	  
-def model_save(model, name, path, val_score):
+def model_save(model, name, path, val_acc):
   """Saving function to keep track of models"""
-  val = str(val_score)[2:5]
+  val = str(val_acc)[2:5]
   path = path + name + '_' + val + '.pth'
   print("Saving model under:", path)
   torch.save(model, path)
@@ -601,5 +601,20 @@ def model_load(path, model_name):
   """Loading function for models from google drive"""
   model = torch.load(path + model_name + '.pth')
   return model
-  
-  model_save(learning.model, "lenet5", path + "Models/", learning.logs["val_accuracy"])
+
+
+def param_strip(param):
+  """Strips the key text info out of certain parameters"""
+  return str(param)[:str(param).find('(')]
+
+
+def full_save(path, name, model, optimiser, loss_function, early_stop_tol, n_epoch, lr, momentum, weight_decay, n_folds, train_trans, val_acc, val_loss, train_time, test_acc=None):
+  """Saves the models weights and hyperparameters to a pth file and csv file"""
+  if train_trans!= None: train_trans="True"
+  ind = ["Model, Optimiser, Loss Function, Early Stop Tol, Epochs, Learning Rate, Momentum, Weight Decay, nFolds, Augmentations, Val Acc, Val Loss, Training Time, Test Acc"]
+  row = [param_strip(model), param_strip(optimiser), param_strip(loss_function), early_stop_tol, n_epoch, lr, momentum, weight_decay, n_folds, train_trans,val_acc, val_loss, train_time, test_acc]
+  s = [str(i) for i in row] 
+  row = [",".join(s)]
+  model_save(model, name, path, val_acc)
+  np.savetxt(path + name + '_' + str(val_acc)[2:5] + ".csv", np.r_[ind, row], fmt='%s', delimiter=',')
+  return
