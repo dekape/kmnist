@@ -422,6 +422,10 @@ class KFoldValidation(SupervisedLearning):
         early_stop: bool, if set to true will apply a stopping criteria to the model based on the relative increase in accuracy
         patience: int, number of epochs in a stabilised accuracy necessary to call the early stop
         tol: float, relative tolerance for the early_stop
+	
+	Returns
+	-------
+	result: nested list [validation_loss, validation_accuracy, train_loss, train_accuracy] for each fold
         """
         self.device = device
         self.X = X
