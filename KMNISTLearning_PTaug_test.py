@@ -235,7 +235,7 @@ class SupervisedLearning:
                               transforms.RandomRotation(10),
                               transforms.RandomCrop(28, pad_if_needed=True),
                               transforms.RandomAffine(degrees=0, translate=(0.1, 0.1), scale=(0.7,1.3)),
-                              transforms.ColorJitter(brightness=0.5, contrast=0.5)
+                              transforms.ColorJitter(brightness=0.5, contrast=0.5),
                               transforms.ToTensor(), 
                               transforms.Normalize(mean=[mean], std=[std])
                               ])
