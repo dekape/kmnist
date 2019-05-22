@@ -54,6 +54,7 @@ class CustomTensorDataset(torch.utils.data.Dataset):
 
 		
 def normalise_image(data, mean, std):
+  " Normalises a set of images using a given mean and standard deviation"
   X_norm = data[:].float()
   X_norm = X_norm - mean
   X_norm = X_norm / std
@@ -70,7 +71,24 @@ class SupervisedLearning:
                  patience = 5,
                  tol = 0.001):
       """
-      
+      Class to perform training and validation on a model given a training dataset, an optimiser and a loss function
+      Parameters
+      ----------
+      X: torch.tensor of size (no_images, 28, 28), training images dataset with int values between 0 and 255
+      y: torch.tensor of size (no_images), training labels with int values between 0 and 9
+      model: nn.Module or inherited class object, model to train
+      optimiser: torch.optim object with chosen optimisation technique
+      batch_size: int, size of the training batch
+      test_batch_size: int, size of validation batch
+      device: str, cpu or cuda, where to run the model
+      trasform: set to true in order to perform pre-processing with Data Augmentation
+      seed: int, seed for reproducibility
+      n_epochs: number of epochs to run the model. If early_stop is set to true, then represented the maximum number of epochs
+      val_ratio: float, positive number, ratio of training data to perform validation on
+      n_splits: int, number of stratified shuffled spltis (see scikit learn stratified shuffle split for more info)
+      early_stop: bool, if set to true will apply a stopping criteria to the model based on the relative increase in accuracy
+      patience: int, number of epochs in a stabilised accuracy necessary to call the early stop
+      tol: float, relative tolerance for the early_stop
       """
       
       self.device = device
@@ -116,6 +134,9 @@ class SupervisedLearning:
       
       
     def split_data(self):
+      """
+      Splits training data into training and validation sets given an user-specified validation ratio
+      """
       sss = StratifiedShuffleSplit(n_splits=self.n_splits, test_size=self.val_ratio, random_state=0)
       sss.get_n_splits(self.X, self.y)
 
@@ -128,6 +149,9 @@ class SupervisedLearning:
       
       
     def train(self, train_data_loader):
+      """
+      Trains a model given a train data loader
+      """
       self.model.train()                # set model to train mode
       
       train_loss, train_accuracy = 0., 0.
@@ -158,6 +182,9 @@ class SupervisedLearning:
     
     
     def validate(self, val_data_loader):
+      """
+      Computes the accuracy and loss of a trained model based on a data loader
+      """
       self.model.eval()                     # set model to evaluation mode
       
       validation_loss, validation_accuracy = 0., 0.
@@ -180,6 +207,16 @@ class SupervisedLearning:
       
     
     def train_wrapper(self, train_full=False, plot_loss=True):
+      """
+      Calls class methods in order to perform training
+
+      Parameters
+      ----------
+      train_full: bool, if set to False, will split the data into training and validation. 
+                  If true, training will be performed on the entire training dataset
+      plot_loss : bool, if set to true will plot the loss and accuracies over each epoch
+      """
+
       # start timer
       t = time.time()
       
@@ -209,6 +246,7 @@ class SupervisedLearning:
         train_dataset = CustomTensorDataset(self.X, self.y, transform=train_transform)
         train_data_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
         
+        # save best train accuracy
         best_train_acc = 0
         
         # train and validate
@@ -236,14 +274,19 @@ class SupervisedLearning:
               best_train_acc = train_accuracy.item()
             
             # If the stopping criteria is met  
-            if self.early.stop: 
-                self.logs = logs
-                self.model = self.best_model
-                break
+            if self.early_stop:
+              if self.early.stop: 
+                  self.logs = logs
+                  self.model = self.best_model
+                  break
+
+            # store logs
             self.logs = logs  
                   
         self.trained_full=True
-        
+
+        # Save best model
+        self.model = self.best_model
 
       else:
         # split data
@@ -266,7 +309,8 @@ class SupervisedLearning:
           train_transform =  transforms.Compose([
                               transforms.Normalize(mean=[mean], std=[std])
                               ])
-            
+        
+        # apply normalisation to validation set    
         val_transform = transforms.Compose([
                             transforms.Normalize(mean=[mean], std=[std])
                             ])
@@ -278,6 +322,7 @@ class SupervisedLearning:
         val_dataset = CustomTensorDataset(self.X_val, self.y_val, transform=val_transform)
         val_data_loader = DataLoader(val_dataset, batch_size=self.test_batch_size, shuffle=False)
         
+        # store best validation accuracy
         best_val_acc = 0
             
         # train and validate
@@ -305,13 +350,17 @@ class SupervisedLearning:
               best_val_acc = val_accuracy.item()
             
             # If the stopping criteria is met  
-            if self.early.stop: 
-                self.logs = logs
-                self.model = self.best_model
-                break
+            if self.early_stop:
+              if self.early.stop: 
+                  self.logs = logs
+                  self.model = self.best_model
+                  break
 
             self.logs = logs
+
         self.trained_full=False
+        
+        # Save best model
         self.model = self.best_model
               
       return None
@@ -320,7 +369,8 @@ class SupervisedLearning:
 
     def find_mean_std(self, full_training=False):
       """
-      Finds the mean and std values of a normalised image (divided by 255)
+      Finds the mean and std values the training set
+      Mean is already relative to a prenormalised set, with values between 0 and 1
       """
       mean = 0
       std = 0
@@ -352,6 +402,27 @@ class KFoldValidation(SupervisedLearning):
                  early_stop = False,
                  patience = 5,
                  tol = 0.001):
+
+        """
+        Class to perform a K-Fold training and validation on a model given a training dataset, an optimiser and a loss function
+        Parameters
+        ----------
+        X: torch.tensor of size (no_images, 28, 28), training images dataset with int values between 0 and 255
+        y: torch.tensor of size (no_images), training labels with int values between 0 and 9
+        model: nn.Module or inherited class object, model to train
+        optimiser: torch.optim object with chosen optimisation technique
+        batch_size: int, size of the training batch
+        test_batch_size: int, size of validation batch
+        device: str, cpu or cuda, where to run the model
+        trasform: set to true in order to perform pre-processing with Data Augmentation
+        seed: int, seed for reproducibility
+        n_epochs: number of epochs to run the model. If early_stop is set to true, then represented the maximum number of epochs
+        val_ratio: float, positive number, ratio of training data to perform validation on
+        n_folds: int, number of stratified K folds (see scikit learn StratifiedKFold for more info)
+        early_stop: bool, if set to true will apply a stopping criteria to the model based on the relative increase in accuracy
+        patience: int, number of epochs in a stabilised accuracy necessary to call the early stop
+        tol: float, relative tolerance for the early_stop
+        """
         self.device = device
         self.X = X
         self.y = y
@@ -366,15 +437,11 @@ class KFoldValidation(SupervisedLearning):
         self.y_train = None
         self.y_val = None
         self.transform = transform
-        #self.train_transform = train_transform
-        #self.val_transform = val_transform
         
         
         self.result = None # The cross validation result 
-        #assert(batch_size > 0 and batch_size < int(0.1 * X.size()[0]))
         assert(batch_size > 0 and batch_size < int(0.1 * len(X)))
         self.batch_size = batch_size
-        #assert(test_batch_size > 0 and test_batch_size < int(0.1 * X.size()[0]))
         assert(test_batch_size > 0 and test_batch_size < int(0.1 * len(X)))
         
         self.test_batch_size = test_batch_size
@@ -384,14 +451,15 @@ class KFoldValidation(SupervisedLearning):
         
         self.mean = None
         self.std = None
-        #self.logs = None # saves the liveloss object data
         
         self.best_model = None
         self.early_stop = early_stop
         if self.early_stop: self.early =  early_stopping(patience=patience, rel_tol=tol)
   
     def cross_validation(self):
-        #shuffler = StratifiedShuffleSplit(n_splits=5, test_size=0.1, random_state=42).split(train_data, train_labels)
+        """
+        Performs the KFold cross validation on the training and validation sets
+        """
         X = self.X/255.
         y = self.y
         X_train_set = []
@@ -439,16 +507,7 @@ class KFoldValidation(SupervisedLearning):
                                 ])
             
             
-            #X_train_set[i] = self._Normlization(X_train_set[i].float())
-            #X_val_set[i] = self._Normlization(X_val_set[i].float())
-            # Check 0-mean, 1-std
-            #print("The ", i," train set, mean after normlization: ", X_train_set[i].numpy().mean(axis=(0,1,2)))
-            #print("The ", i," train set, std after normlization: ", X_train_set[i].numpy().std(axis=(0,1,2)))
-        
-        #for i in range(self.n_folds):
-            #train_set = TensorDataset(X_train_set[i], y_train_set[i].long())
-            #validation_set = TensorDataset(X_val_set[i], y_val_set[i].long())
-            
+            # Create Datasets
             train_set = CustomTensorDataset(X_train_set[i], y_train_set[i].long(), transform=train_transform)
             validation_set = CustomTensorDataset(X_val_set[i], y_val_set[i].long(), transform=val_transform)
             
@@ -470,7 +529,7 @@ class KFoldValidation(SupervisedLearning):
         return result
       
     def _train_validation(self, train_set, validation_set, plot=True):
-        """The train function which takes the weight-decay as the argument """
+        """ Train model in different folds """
         t = time.time()
 
         train_loader = DataLoader(train_set, batch_size= self.batch_size, shuffle=True, num_workers=4)
@@ -555,17 +614,20 @@ class early_stopping:
 	
 	
 	
-def evaluate_test(X_test, model, norm_mean, norm_std, test_batch_size=30, test_transform=None, device="cpu", save_to_csv=False, path="./foo.csv"):
+def evaluate(X_test, model, norm_mean, norm_std, ensemble=False, test_batch_size=30, test_transform=None, device="cpu", save_to_csv=False, path="./foo.csv"):
       """
       This method takes a tensor of images and a trained model and returns the predicted labels
       from those images
       Params
       ------
-        X_test: torch.tensor of size (no_images, 28, 28), test images dataset
+        X_test: torch.tensor of size (no_images, 28, 28), test images dataset with values prenormalised between 0 and 1 (i.e. divided by 255)
         model: nn.Module or inherited class object
-        test_batch_size: int, defines the size of the batch for the datset
+        norm_mean: float, mean value of training set to normalise the test set
+        norm_std: float, standard deviation value of the training set to normalise the test set
+        ensemble: bool, set to true if performing ensembled models, prevents Softmax to be called twice
+        test_batch_size: int, defines the size of the batch for the test datset
         test_transform: transforms.Compose list of transforms to apply to the dataset
-        device: str, on which device to run the model
+        device: str, on which device to run the model, cpu or cuda
         save_to_csv: bool, option to save predictions to csv in format (index, prediction)
         path: str, path to save string 
         
@@ -585,7 +647,8 @@ def evaluate_test(X_test, model, norm_mean, norm_std, test_batch_size=30, test_t
           with torch.no_grad():
               X, y = X.to(device), y.to(device)
               a2 = model(X)
-              y_pred = F.log_softmax(a2, dim=1).max(1)[1]
+              if ensemble: y_pred = a2.max(1)[1]
+              else: y_pred = F.log_softmax(a2, dim=1).max(1)[1]
               y_preds.append(y_pred.cpu().numpy())
             
       y_preds =  np.concatenate(y_preds, 0)
@@ -597,7 +660,7 @@ def evaluate_test(X_test, model, norm_mean, norm_std, test_batch_size=30, test_t
         
       return y_preds, sub
 
-	  
+	   
 def model_save(model, name, path, val_acc):
   """Saving function to keep track of models"""
   val = str(val_acc)[2:5]
@@ -607,18 +670,15 @@ def model_save(model, name, path, val_acc):
   return
 
 
-
 def model_load(path, model_name):
   """Loading function for models from google drive"""
   model = torch.load(path + model_name + '.pth')
   return model
 
 
-
 def param_strip(param):
   """Strips the key text info out of certain parameters"""
   return str(param)[:str(param).find('(')]
-
 
 
 def full_save(path, name, model, optimiser, loss_function, early_stop_tol, n_epoch, lr, momentum, weight_decay, n_folds, train_trans, val_acc, val_loss, train_time, test_acc=None):
@@ -632,7 +692,6 @@ def full_save(path, name, model, optimiser, loss_function, early_stop_tol, n_epo
   model_save(model, name, path, val_acc)
   np.savetxt(path + name + '_' + str(val_acc)[2:5] + ".csv", np.r_[ind, row], fmt='%s', delimiter=',')
   return
-
 
 
 class ensemble_net(nn.Module):
@@ -665,3 +724,8 @@ class ensemble_net(nn.Module):
       for model in self.models:
         print(model)
       return None
+
+
+def accuracy_check(y_preds, y):
+  """Returns the accuracy on the validation set"""
+  return len(np.where((y_preds==y.numpy())==True)[0])/len (y_preds)
