@@ -624,7 +624,7 @@ def param_strip(param):
 def full_save(path, name, model, optimiser, loss_function, early_stop_tol, n_epoch, lr, momentum, weight_decay, n_folds, train_trans, val_acc, val_loss, train_time, test_acc=None):
   """Saves the models weights and hyperparameters to a pth file and csv file"""
   if train_trans: train_trans="True"
-  else train_trans="False"
+  else: train_trans="False"
   ind = ["Model, Optimiser, Loss Function, Early Stop Tol, Epochs, Learning Rate, Momentum, Weight Decay, nFolds, Augmentations, Val Acc, Val Loss, Training Time, Test Acc"]
   row = [param_strip(model), param_strip(optimiser), param_strip(loss_function), early_stop_tol, n_epoch, lr, momentum, weight_decay, n_folds, train_trans,val_acc, val_loss, train_time, test_acc]
   s = [str(i) for i in row] 
