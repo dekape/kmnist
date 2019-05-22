@@ -1,6 +1,15 @@
 # ACSE-8-Mini-Project
 
-## Important Links:
+## Introduction
+Project Intro
 
-- Team Registration: https://www.kaggle.com/t/3713b8edcaab4ac7ac6045d7353c1aba
-- Kaggle Competition Site + Leaderboard: https://www.kaggle.com/c/acse-module-8-19/overview
+## Repo Structure
+Repo Structure
+
+## Requirements
+python requirements
+libraries
+
+
+## Usage/Examples
+Layout colab notebook
