@@ -24,4 +24,4 @@ If running on a Colab notebook, the example given in 'KNIST_Layout.ipynb' shows 
 
 
 ## Usage/Examples
-See 'KNIST_Layout.ipynb' for usage examples.
+See 'KNIST_Layout.ipynb' for installation and usage examples.
