@@ -14,6 +14,7 @@ The aim of this project was to create and implement a neural network to maximise
 - KMNIST_Layout_deepAlex.ipynb: notebook with tests over different versions of the AlexNet network
 - KMNIST_SDeepAlex_old_aug.ipynb: notebook with tests over a deeper version of the AlexNet network
 - KMNIST_TLDataAug.ipynb: notebook with examples of how to perform transfer learning with the 'SupervisedLearning' class as well as an implementation of pre processing data augmentation using the 'albumentation' libray.
+- KMNIST_ensemble_transfer.ipynb: notebook with examples on how to load models and perform model ensembling
 - weight_decay_tuning.ipynb: notebook with tests over different weight decays for the L2 normalisation on the modified AlexNet networks
 
 ## Requirements
