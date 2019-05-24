@@ -1,4 +1,3 @@
-http://codh.rois.ac.jp/img/kmnist.png
 <img src="http://codh.rois.ac.jp/img/kmnist.png"
      alt="Markdown Monster icon"
      style="float: left; margin-right: 10px;" />
