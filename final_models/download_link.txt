@@ -1,0 +1,3 @@
+Download link to obtained the best two .pth model files, their predictions, and classes to load them.
+
+https://drive.google.com/open?id=1xskT1Z4K9IgiExUUH59YRR_UgoDTyYxI
