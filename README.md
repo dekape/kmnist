@@ -1,8 +1,9 @@
+# ACSE-8-Mini-Project
+
 <img src="http://codh.rois.ac.jp/img/kmnist.png"
      alt="Markdown Monster icon"
      style="float: left; margin-right: 10px;" />
 
-# ACSE-8-Mini-Project
 
 ## Introduction
 The aim of this project was to create and implement a neural network to maximise the prediction accuracy of Kuzushiji characters using the KMNIST dataset. A 'SupervisedLearning' class was created as a supervised training wrapper over 'pytorch' and 'scikitlearn' library modules. Modified versions of the well established LetNet5 and AlexNet networks have been implemented as examples.
